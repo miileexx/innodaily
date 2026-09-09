@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>InnoNews · Escuchar resumen</title>
+  <title>InnoNews · Audio Summary</title>
 
   <style>
     * {
@@ -15,42 +15,83 @@
       margin: 0;
       min-height: 100vh;
       font-family: Arial, Helvetica, sans-serif;
-      background: #f5f6f8;
-      color: #202124;
+      background: #f5f5f3;
+      color: #1f2a44;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       padding: 24px;
     }
 
     .player {
       width: 100%;
-      max-width: 720px;
-      background: white;
+      max-width: 620px;
+      background: #ffffff;
+      border: 1px solid #f1eadf;
       border-radius: 22px;
-      padding: 34px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.08);
+      padding: 30px;
+      box-shadow: 0 12px 40px rgba(31,42,68,.08);
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #fff4df;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
     }
 
     .brand {
-      font-size: 14px;
+      font-size: 11px;
+      line-height: 14px;
       font-weight: 700;
-      letter-spacing: .8px;
-      color: #777;
-      margin-bottom: 16px;
+      color: #b26b00;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+    }
+
+    .subbrand {
+      font-size: 13px;
+      color: #8a8f98;
+      margin-top: 2px;
     }
 
     h1 {
-      font-size: 27px;
-      line-height: 1.25;
-      margin: 0 0 16px;
+      margin: 0 0 14px 0;
+      font-size: 24px;
+      line-height: 31px;
+      color: #1f2a44;
     }
 
     .summary {
-      color: #555;
-      font-size: 17px;
-      line-height: 1.65;
-      margin-bottom: 28px;
+      font-size: 15px;
+      line-height: 23px;
+      color: #556070;
+      margin-bottom: 24px;
+    }
+
+    .status-box {
+      background: #fffaf2;
+      border: 1px solid #f1eadf;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+
+    .status {
+      font-size: 13px;
+      font-weight: 700;
+      color: #b26b00;
     }
 
     .controls {
@@ -61,164 +102,273 @@
 
     button {
       border: 0;
-      border-radius: 12px;
-      padding: 13px 20px;
-      font-size: 15px;
-      font-weight: 600;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
     }
 
-    .play {
-      background: #111;
-      color: white;
+    .primary {
+      background: #f5a000;
+      color: #ffffff;
     }
 
     .secondary {
-      background: #eceff3;
-      color: #222;
+      background: #fff4df;
+      color: #a76500;
     }
 
-    .status {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #777;
+    .hint {
+      margin-top: 16px;
+      font-size: 11px;
+      line-height: 16px;
+      color: #98a0ad;
+    }
+
+    @media screen and (max-width: 600px) {
+      .player {
+        padding: 22px;
+      }
+
+      h1 {
+        font-size: 21px;
+        line-height: 28px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="player">
+  <div class="player">
 
-  <div class="brand">
-    INNONEWS DAILY
+    <div class="top">
+
+      <div class="icon">
+        🔊
+      </div>
+
+      <div>
+        <div class="brand">
+          InnoNews Daily
+        </div>
+
+        <div class="subbrand">
+          Audio summary
+        </div>
+      </div>
+
+    </div>
+
+    <h1 id="title">
+      Loading...
+    </h1>
+
+    <div id="summary" class="summary">
+      Loading summary...
+    </div>
+
+    <div class="status-box">
+      <div id="status" class="status">
+        Preparing audio...
+      </div>
+    </div>
+
+    <div class="controls">
+
+      <button
+        id="playButton"
+        class="primary"
+        onclick="playSpeech()">
+        ▶ Play
+      </button>
+
+      <button
+        class="secondary"
+        onclick="pauseSpeech()">
+        ⏸ Pause
+      </button>
+
+      <button
+        class="secondary"
+        onclick="resumeSpeech()">
+        ▶ Resume
+      </button>
+
+      <button
+        class="secondary"
+        onclick="stopSpeech()">
+        ■ Stop
+      </button>
+
+    </div>
+
+    <div id="hint" class="hint">
+      InnoNews uses your browser's text-to-speech engine. No additional AI generation is used.
+    </div>
+
   </div>
 
-  <h1 id="title">
-    Resumen de noticia
-  </h1>
 
-  <div id="summary" class="summary">
-    Cargando resumen...
-  </div>
+  <script>
 
-  <div class="controls">
+    const params = new URLSearchParams(window.location.search);
 
-    <button class="play" onclick="playSpeech()">
-      ▶ Escuchar resumen
-    </button>
+    const title =
+      params.get("title") ||
+      "InnoNews summary";
 
-    <button class="secondary" onclick="pauseSpeech()">
-      ⏸ Pausar
-    </button>
+    const summary =
+      params.get("text") ||
+      "No summary was provided.";
 
-    <button class="secondary" onclick="resumeSpeech()">
-      ▶ Continuar
-    </button>
-
-    <button class="secondary" onclick="stopSpeech()">
-      ■ Detener
-    </button>
-
-  </div>
-
-  <div id="status" class="status">
-    Listo para reproducir
-  </div>
-
-</div>
-
-<script>
-
-const params = new URLSearchParams(window.location.search);
-
-const title =
-  params.get("title") ||
-  "Resumen de noticia";
-
-const summary =
-  params.get("text") ||
-  "No se encontró un resumen.";
-
-document.getElementById("title").textContent = title;
-document.getElementById("summary").textContent = summary;
-
-let utterance = null;
+    const lang =
+      params.get("lang") ||
+      "en-US";
 
 
-function playSpeech() {
-
-  speechSynthesis.cancel();
-
-  utterance = new SpeechSynthesisUtterance(summary);
-
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-
-  /*
-     Detección sencilla:
-     si en el futuro quieres que InnoNews
-     lea en inglés, podemos mandarle lang=en-US
-  */
-
-  const lang = params.get("lang") || "es-MX";
-
-  utterance.lang = lang;
-
-  utterance.onstart = function() {
-    document.getElementById("status").textContent =
-      "🔊 Reproduciendo resumen...";
-  };
-
-  utterance.onend = function() {
-    document.getElementById("status").textContent =
-      "✓ Reproducción terminada";
-  };
-
-  utterance.onerror = function() {
-    document.getElementById("status").textContent =
-      "No se pudo reproducir el audio.";
-  };
-
-  speechSynthesis.speak(utterance);
-}
+    document.getElementById("title").textContent = title;
+    document.getElementById("summary").textContent = summary;
 
 
-function pauseSpeech() {
-
-  if (speechSynthesis.speaking) {
-    speechSynthesis.pause();
-
-    document.getElementById("status").textContent =
-      "⏸ Reproducción pausada";
-  }
-
-}
+    let utterance = null;
 
 
-function resumeSpeech() {
+    function createUtterance() {
 
-  if (speechSynthesis.paused) {
-    speechSynthesis.resume();
+      utterance =
+        new SpeechSynthesisUtterance(summary);
 
-    document.getElementById("status").textContent =
-      "🔊 Reproduciendo resumen...";
-  }
+      utterance.lang = lang;
 
-}
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      utterance.volume = 1;
 
 
-function stopSpeech() {
+      utterance.onstart = function() {
 
-  speechSynthesis.cancel();
+        document.getElementById("status").textContent =
+          "🔊 Playing summary...";
 
-  document.getElementById("status").textContent =
-    "■ Reproducción detenida";
+        document.getElementById("playButton").textContent =
+          "↻ Restart";
 
-}
+      };
 
-</script>
+
+      utterance.onend = function() {
+
+        document.getElementById("status").textContent =
+          "✓ Summary finished";
+
+        document.getElementById("playButton").textContent =
+          "▶ Play again";
+
+      };
+
+
+      utterance.onerror = function() {
+
+        document.getElementById("status").textContent =
+          "▶ Tap Play to listen";
+
+      };
+
+    }
+
+
+    function playSpeech() {
+
+      speechSynthesis.cancel();
+
+      createUtterance();
+
+      speechSynthesis.speak(utterance);
+
+    }
+
+
+    function pauseSpeech() {
+
+      if (speechSynthesis.speaking && !speechSynthesis.paused) {
+
+        speechSynthesis.pause();
+
+        document.getElementById("status").textContent =
+          "⏸ Summary paused";
+
+      }
+
+    }
+
+
+    function resumeSpeech() {
+
+      if (speechSynthesis.paused) {
+
+        speechSynthesis.resume();
+
+        document.getElementById("status").textContent =
+          "🔊 Playing summary...";
+
+      }
+
+    }
+
+
+    function stopSpeech() {
+
+      speechSynthesis.cancel();
+
+      document.getElementById("status").textContent =
+        "■ Playback stopped";
+
+      document.getElementById("playButton").textContent =
+        "▶ Play";
+
+    }
+
+
+    /*
+      Try to start automatically.
+
+      Some browsers permit this because the page was opened
+      directly from a user click in the email.
+
+      Others may block speech autoplay.
+      In that case the Play button remains available.
+    */
+
+    window.addEventListener("load", function() {
+
+      setTimeout(function() {
+
+        try {
+
+          playSpeech();
+
+        } catch (error) {
+
+          document.getElementById("status").textContent =
+            "▶ Tap Play to listen";
+
+        }
+
+      }, 350);
+
+    });
+
+
+    window.addEventListener("beforeunload", function() {
+
+      speechSynthesis.cancel();
+
+    });
+
+  </script>
 
 </body>
 </html>
